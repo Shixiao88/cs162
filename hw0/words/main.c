@@ -46,6 +46,20 @@ WordCount *word_counts = NULL;
  */
 int num_words(FILE* infile) {
   int num_words = 0;
+  char c;
+  char prevChar;
+  while ((c = fgetc(infile)) != EOF) {
+    if (isalpha(c)) {
+      ;
+    }
+    else  {
+      if (isalpha(prevChar)) {
+	num_words++;
+      }
+      ;
+    }
+    prevChar = c;
+  }
 
   return num_words;
 }
@@ -57,6 +71,26 @@ int num_words(FILE* infile) {
  * Useful functions: fgetc(), isalpha(), tolower(), add_word().
  */
 void count_words(WordCount **wclist, FILE *infile) {
+  char c;
+  char prevChar;
+  char *new_word = malloc(sizeof(char) * MAX_WORD_LEN+1); // large blcok enough
+  while ((c = fgetc(infile)) != EOF) {
+    c = tolower(c);
+    if (isalpha(c)) {
+      int len = strlen(new_word);
+      new_word[len] = c;
+      new_word[len+1] = '\0';
+    }
+    else  {
+      if (isalpha(prevChar)) {
+	add_word(wclist, new_word);
+	new_word = NULL;
+	new_word = malloc(sizeof(char) * MAX_WORD_LEN+1); // initialize a new one
+      }
+      ;
+    }
+    prevChar = c;
+  }
 }
 
 /*
@@ -64,7 +98,9 @@ void count_words(WordCount **wclist, FILE *infile) {
  * Useful function: strcmp().
  */
 static bool wordcount_less(const WordCount *wc1, const WordCount *wc2) {
-  return 0;
+  if (wc1 -> count == wc2 -> count) return strcmp(wc1 -> word, wc2 -> word);
+  else if (wc1 -> count < wc2 -> count) return true;
+  else return false;
 }
 
 // In trying times, displays a helpful message.
@@ -132,13 +168,19 @@ int main (int argc, char *argv[]) {
     // The first file can be found at argv[optind]. The last file can be
     // found at argv[argc-1]. You'll need to count words in all specified
     // files.
+    for (i = optind; i <= argc - 1; i++) {
+      infile = fopen(argv[i], "r");
+      total_words += num_words(infile);
+
+      infile = fopen(argv[i], "r");
+      count_words(&word_counts, infile);
+    }
   }
 
   if (count_mode) {
     printf("The total number of words is: %i\n", total_words);
   } else {
     wordcount_sort(&word_counts, wordcount_less);
-
     printf("The frequencies of each word are: \n");
     fprint_words(word_counts, stdout);
 }

@@ -1,0 +1,3 @@
+d. argv points to 0x7fffffffe4f8
+e. on argv's location it is a pointer of a char array, i.e. char **
+g. 0x55555555480b
