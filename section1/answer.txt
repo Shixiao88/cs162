@@ -1,0 +1,74 @@
+2.1
+// using array concept
+void replace(char *dest, char *source, int offset){
+     int i;
+     for (i = offset; dest[i] != '\0'; i++) {
+     	 do { dest[i] = source[i]; }
+	 while (dest[i] != '\0';
+     }
+}
+
+
+// using pointer
+void replace(char *dest, char *source, int offset){
+     dest = dest + offset;
+     while (*dest++ = *source++) != '\0') {
+     	   ;
+     }
+}
+
+
+3.1
+OS: 1. Referee: allocate resouce, offer protection and isolation
+    2. Illusionist: abstraction of phisical resources
+    2. Glue: provide common service.
+
+3.2
+a process is an instance of a user running program. Each process have isolated data.
+a thread is a lightweighted process that used by parallelism, threads share data 
+a process can have multiple threads.
+
+
+3.3
+Kernel use address translation to translate the user program space, in order to protect the user program accessing kernel's space. meanwhile give more flexibility and more control.
+
+3.4
+Dual-mode: kernel mode and user program mode.
+Syscall, Iterrupt signal, Trap or Exception.
+
+3.5
+to prevent malicious or buggy user program to have too large data to pollute the kernel stack.
+
+3.6
+the syscall will copy all registers' value in stack frame, turn sysmode into kernal mode, get kernel stack.
+
+4.3
+mov $0 %eax
+
+
+4.6
+callee:
+	pushl %ebp  - push ebp onto stack
+	movl %esp, %ebp  - move whatever in esp to ebp
+	subl $16, %esp  - shrink 2 words of stack
+	movl 8(%ebp), %edx  - get second parameter store in edx
+	movl 12(%ebp), %eax  - get first parameter store in eax
+	addl %edx, %eax  - add two parameters and store in eax
+	movl %eax, -4(%ebp)  - store result in return address
+	movl -4(%ebp), %eax  - £¿£¿£¿
+	addl $1, %eax  - add eax by 1
+	leave
+	ret
+
+caller:
+	pushl %ebp  - push ebp onto stack
+	movl %esp, %ebp  - push ebp onto stack
+	pushl $4  - push 4 onto stack
+	pushl $3  - push 3 onto stack
+	call callee  - self explain
+	addl $8, %esp  - expand the stack
+	movl %eax, global  - save what's in eax in global
+	nop
+	leave
+	ret
+ 
