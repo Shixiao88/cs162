@@ -31,6 +31,8 @@
 .dSYM
 .DS_Store
 *.swp
+*~
+TAGS
 
 # HW0
 hw0/limits
