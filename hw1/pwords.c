@@ -32,6 +32,26 @@
 #include "word_count.h"
 #include "word_helpers.h"
 
+typedef struct multi_param {
+  char *file_name;
+  word_count_list_t *word_counts;
+} param_t;
+
+
+void *myfun(void *mul_param) {
+  param_t *param = (param_t *)mul_param;
+  FILE *infile = fopen(param->file_name, "r");
+  if (infile == NULL) {
+    perror("fopen");
+    pthread_exit(NULL);
+  }
+  count_words(param->word_counts, infile);
+  fclose(infile);      
+  printf("ttt");
+  pthread_exit(NULL);
+}
+
+
 /*
  * main - handle command line, spawning one thread per file.
  */
@@ -44,11 +64,30 @@ int main(int argc, char *argv[]) {
     /* Process stdin in a single thread. */
     count_words(&word_counts, stdin);
   } else {
-    /* TODO */
-  }
+    pthread_t threads[argc];
+    int i, rc;
+    param_t *multi_param;
+    for (i = 1; i < argc; i++) {
+      multi_param = malloc(sizeof(param_t));
+      multi_param->file_name = (char *)argv[i];
+      multi_param->word_counts = &(word_counts);
 
-  /* Output final result of all threads' work. */
-  wordcount_sort(&word_counts, less_count);
-  fprint_words(&word_counts, stdout);
-  return 0;
+      rc = pthread_create(&threads[i], NULL, myfun, (void *)multi_param);
+      if (rc) {
+	printf("ERROR; return code from pthread_create() is %d\n", rc);
+	exit(-1);
+      }
+    }
+
+    for (i = 1; i < argc; i++) {
+      pthread_join(threads[i], NULL);
+    }
+
+    /* Output final result of all threads' work. */
+    wordcount_sort(&word_counts, less_count);
+    fprint_words(&word_counts, stdout);
+    
+    pthread_exit(NULL);
+    return 0;
+  }
 }
