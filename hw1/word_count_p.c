@@ -32,6 +32,7 @@
 
 void init_words(word_count_list_t *wclist) {
   list_init(&(wclist -> lst));
+  pthread_mutex_init(&(wclist -> lock), NULL);
 }
 
 size_t len_words(word_count_list_t *wclist) {
@@ -41,16 +42,15 @@ size_t len_words(word_count_list_t *wclist) {
 word_count_t *find_word(word_count_list_t *wclist, char *word) {
   struct list_elem *e;
 
-  //  pthread_mutex_lock(&(wclist -> lock));
-  if (list_empty(&(wclist -> lst))) {
-    //pthread_mutex_unlock(&(wclist -> lock));
+  bool is_empty = list_empty(&(wclist -> lst));
+  if (is_empty) {
     return NULL;
   }
+
   for (e = list_begin (&(wclist -> lst)); e != list_end (&(wclist -> lst)); e = list_next (e)) {
     word_count_t *f = list_entry (e, word_count_t, elem);
     if (f->word) {
       if (strcmp(f -> word, word) == 0) {
-	//pthread_mutex_unlock(&(wclist -> lock));
 	return f;
       }
     }
@@ -59,19 +59,18 @@ word_count_t *find_word(word_count_list_t *wclist, char *word) {
 }
 
 word_count_t *add_word(word_count_list_t *wclist, char *word) {
-  //pthread_mutex_lock(&(wclist -> lock));
   word_count_t *wct = find_word(wclist, word);
   if (wct) {
     wct -> count++;
-    //pthread_mutex_unlock(&(wclist -> lock));
     return wct;
   } else {
     wct = malloc(sizeof(word_count_t));
     wct->word = malloc(sizeof(word));
     wct->word = word;
     wct->count = 1;
+    pthread_mutex_lock(&(wclist -> lock));
     list_push_back(&(wclist->lst), &(wct->elem));
-    //pthread_mutex_unlock(&(wclist -> lock));
+    pthread_mutex_unlock(&(wclist -> lock));
     return wct;
   }
 }

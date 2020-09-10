@@ -47,8 +47,6 @@ void *myfun(void *mul_param) {
   }
   count_words(param->word_counts, infile);
   fclose(infile);      
-  printf("ttt");
-  pthread_exit(NULL);
 }
 
 
@@ -82,12 +80,11 @@ int main(int argc, char *argv[]) {
     for (i = 1; i < argc; i++) {
       pthread_join(threads[i], NULL);
     }
-
+    
     /* Output final result of all threads' work. */
     wordcount_sort(&word_counts, less_count);
     fprint_words(&word_counts, stdout);
     
-    pthread_exit(NULL);
     return 0;
   }
 }
