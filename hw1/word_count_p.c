@@ -55,7 +55,6 @@ word_count_t *find_word(word_count_list_t *wclist, char *word) {
       }
     }
   }
-  return NULL;
 }
 
 word_count_t *add_word(word_count_list_t *wclist, char *word) {
@@ -92,6 +91,7 @@ static bool less_list(const struct list_elem *ewc1,
     return strcmp(wc1->word, wc2->word) >=0 ? false : true;
   }
   return compare >= 0 ? false : true;
+  return NULL;
 }
 
 void wordcount_sort(word_count_list_t *wclist,

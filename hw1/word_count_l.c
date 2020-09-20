@@ -49,7 +49,6 @@ word_count_t *find_word(word_count_list_t *wclist, char *word) {
     }
     }
   }
-  return NULL;
 }
 
 word_count_t *add_word(word_count_list_t *wclist, char *word) {
@@ -73,6 +72,7 @@ void fprint_words(word_count_list_t *wclist, FILE *outfile) {
     word_count_t *f = list_entry (e, word_count_t, elem);
     fprintf(outfile, "%8d\t%s\n", f->count, f->word);
   }
+  return NULL;
 }
 
 static bool less_list(const struct list_elem *ewc1,

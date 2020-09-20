@@ -23,8 +23,8 @@ Functional methods take the head of a list as first arg.
 Mutators take a reference to a list as first arg.
 */
 
-#ifndef WORD_COUNT_H_
-#define WORD_COUNT_H_
+#ifndef word_count_h
+#define word_count_h
 
 #include <ctype.h>
 #include <stdbool.h>
@@ -34,7 +34,7 @@ Mutators take a reference to a list as first arg.
 #include <stdlib.h>
 
 /* Representation of a word count object.
-   Includes next field for constructing a singly-linked list. */
+   Includes next field for constructing singly linked list*/
 struct word_count {
     char *word;
     int count;
@@ -61,10 +61,10 @@ void add_word(WordCount **wclist, char *word);
 /* print word counts to a file */
 void fprint_words(WordCount *wchead, FILE *ofile);
 
-/* Inserts a word into the list in order. Assumes the existing list is already sorted. Implemented in wc_sort.o. */
+/* Inserts a word into the list in order. Assumes the existing list is already sorted */
 void wordcount_insert_ordered(WordCount **wclist, WordCount *elem, bool less(const WordCount *, const WordCount *));
 
-/* Sort a word count list in place. Implemented in wc_sort.o. */
+/* Sort a word count list in place */
 void wordcount_sort(WordCount **wclist, bool less(const WordCount *, const WordCount *));
 
 #endif /* word_count_h */

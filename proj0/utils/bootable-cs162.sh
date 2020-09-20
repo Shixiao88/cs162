@@ -50,8 +50,8 @@ do
 done
 
 # Add some regular files too
-echo -e "I need to study for the CS 162 final. Do you?" > file1.txt
-echo -e "I need to study for the CS 186 final. Do you?" > file2.txt
+echo -e "This is a file that contains text." > file1.txt
+echo -e "This is another file that contains text." > file2.txt
 COPY_FILES_CMD+=" -p ./file1.txt -a file1.txt"
 COPY_FILES_CMD+=" -p ./file2.txt -a file2.txt"
 

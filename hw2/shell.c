@@ -54,8 +54,7 @@ int cmd_help(unused struct tokens *tokens) {
 }
 
 /* Exits this shell */
-int cmd_exit(struct tokens *tokens) {
-  tokens_destroy(tokens);
+int cmd_exit(unused struct tokens *tokens) {
   exit(0);
 }
 

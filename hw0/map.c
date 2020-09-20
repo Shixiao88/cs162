@@ -19,15 +19,6 @@ int main(int argc, char *argv[]) {
     /* ... and some more stuff */
     volatile char *buf2 = malloc(100);
 
-    printf("main @ %p\n", main);
-    printf("recur @ %p\n", recur);
-    printf("stuff @ %p\n", &stuff);
-    printf("foo @ %p\n", &foo);
-
-    printf("main stack @ %p\n", &i);
-
-    printf("Heap: malloc 1: %p\n", buf1);
-    printf("Heap: malloc 2: %p\n", buf2);
     recur(3);
     return 0;
 }

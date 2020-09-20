@@ -49,7 +49,6 @@ void *myfun(void *mul_param) {
   fclose(infile);      
 }
 
-
 /*
  * main - handle command line, spawning one thread per file.
  */

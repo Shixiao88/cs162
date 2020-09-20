@@ -60,7 +60,6 @@ int num_words(FILE* infile) {
     }
     prevChar = c;
   }
-
   return num_words;
 }
 
