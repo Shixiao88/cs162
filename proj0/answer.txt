@@ -1,0 +1,79 @@
+
+
+10.
+print/x if_
+$10 = {edi = 0x0, esi = 0x0, ebp = 0x0, esp_dummy = 0x0, ebx = 0x0, edx = 0x0, ecx = 0x0, eax = 0x0, gs = 0x23, fs = 0x23, es = 0x23, ds = 0x23, vec_no = 0x0, error_code = 0x0, frame_pointer = 0x0, eip = 0x8048754, cs = 0x1b, eflags = 0x202, esp = 0xc0000000, ss = 0x23}
+
+before asm volatile
+eax            0xc010af58       -1072648360
+ecx            0x8      8
+edx            0xc0100008       -1072693240
+ebx            0xc0286000       -1071095808
+esp            0xc010af58       0xc010af58
+ebp            0xc0109000       0xc0109000
+esi            0xc010705c       -1072664484
+edi            0x74     116
+eip            0xc0021b0f       0xc0021b0f <intr_exit>
+eflags         0x296    [ PF AF SF IF ]
+cs             0x8      8
+ss             0x10     16
+ds             0x10     16
+es             0x10     16
+fs             0x10     16
+gs             0x10     16
+
+
+  /* Start the user process by simulating a return from an
+ 73©¦      interrupt, implemented by intr_exit (in
+ 74©¦      threads/intr-stubs.S).  Because intr_exit takes all of its
+ 75©¦      arguments on the stack in the form of a `struct intr_frame',
+ 76©¦      we just point the stack pointer (%esp) to our stack frame
+ 77©¦      and jump to it. */
+ 78©À>  asm volatile ("movl %0, %%esp; jmp intr_exit" : : "g" (&if_) : "memory");
+ 79©¦   NOT_REACHED ();
+
+
+
+after asm volatile
+eax            0x0      0
+ecx            0x0      0
+edx            0x0      0
+ebx            0x0      0
+esp            0xc010af94       0xc010af94
+ebp            0x0      0x0
+esi            0x0      0
+edi            0x0      0
+eip            0xc0021b19       0xc0021b19 <intr_exit+10>
+eflags         0x292    [ AF SF IF ]
+cs             0x8      8
+ss             0x10     16
+ds             0x23     35
+es             0x23     35
+fs             0x23     35
+gs             0x23     35
+
+12.
+$esp is not zero
+
+13.
+(gdb) btpagefault
+#0  _start (argc=<unavailable>, argv=<unavailable>) at ../../lib/user/entry.c:9
+
+
+16.
+(gdb) x/2xw $esp
+0xbfffff98:     0x00000001      0x000000a2
+
+17.
+(gdb) p args[0]
+$2 = 1
+(gdb) p/x args[1]
+$4 = 0xa2
+the internal_frame's esp is the same as the esp in 16, same for args[0] and args[1], which are just offsets.
+
+18.
+sema_down(&temporary) : when process_start
+
+19.
+Running thread: 0xc000e000, name = "main"
+Other thread: 0xc0104000, name = "idle"
