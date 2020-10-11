@@ -32,6 +32,7 @@ int cmd_exit(struct tokens *tokens);
 int cmd_help(struct tokens *tokens);
 int cmd_pwd(struct tokens *tokens);
 int cmd_cd(struct tokens *tokens);
+int cmd_exec(struct tokens *tokens);
 
 /* Built-in command functions take token array (see parse.h) and return int */
 typedef int cmd_fun_t(struct tokens *tokens);
@@ -91,6 +92,27 @@ int cmd_cd(unused struct tokens *tokens) {
   return error;
 }
 
+/* Execute program */
+int cmd_exec(struct tokens *tokens) {
+  pid_t cpid = fork();
+  if (cpid == -1) {
+    printf("error when executing %s,\n error code: %d", tokens_get_token(tokens, 0), errno);
+  }
+  
+  if (cpid == 0) {
+    const char *path = tokens_get_token(tokens, 0);
+    size_t len = tokens_get_length(tokens);
+    char *argv[len - 1] ;
+    for (int i = 1; i < len; i++) {
+      argv[i - 1] = tokens_get_token(tokens, i);
+    }
+    return execv(path, argv);
+    
+  } else { 
+    wait(NULL);                /* Wait for child */
+    return 1;
+  }
+}
 
 /* Looks up the built-in command, if it exists. */
 int lookup(char cmd[]) {
@@ -147,7 +169,8 @@ int main(unused int argc, unused char *argv[]) {
       cmd_table[fundex].fun(tokens);
     } else {
       /* REPLACE this to run commands as programs. */
-      fprintf(stdout, "This shell doesn't know how to run programs.\n");
+      cmd_exec(tokens);
+      //fprintf(stdout, "This shell doesn't know how to run programs.\n");
     }
 
     if (shell_is_interactive)
