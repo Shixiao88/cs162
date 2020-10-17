@@ -83,7 +83,7 @@ int cmd_cd(unused struct tokens *tokens) {
   }
   int error = chdir(tokens_get_token(tokens, 1));
   if (error) {
-    printf("error on cd : %d\n", errno);
+    perror("CD");
   } else {
     char buf[80];
     getcwd(buf, sizeof(buf));
@@ -96,17 +96,47 @@ int cmd_cd(unused struct tokens *tokens) {
 int cmd_exec(struct tokens *tokens) {
   pid_t cpid = fork();
   if (cpid == -1) {
-    printf("error when executing %s,\n error code: %d", tokens_get_token(tokens, 0), errno);
+    perror("fork");
   }
   
   if (cpid == 0) {
-    const char *path = tokens_get_token(tokens, 0);
     size_t len = tokens_get_length(tokens);
-    char *argv[len - 1] ;
-    for (int i = 1; i < len; i++) {
-      argv[i - 1] = tokens_get_token(tokens, i);
+    char *argv[len] ;
+    for (int i = 0; i < len; i++) {
+      argv[i] = tokens_get_token(tokens, i);
     }
-    return execv(path, argv);
+    argv[len] = NULL;
+    if (execv(argv[0], argv) == -1) {
+      perror("execv");
+    }
+    return res;
+      /*} else {
+      printf("reach 2\n");
+      char *dup = strdup(getenv("PATH"));
+      char *s = dup;
+      char *p = NULL;
+      int result;
+      printf("reach 2\n");
+      do {
+	p = strchr(s, ':');
+	if (p != NULL) {
+	  p[0] = 0;
+	}
+	char * fullPath = (char *) malloc(5 + strlen(s) + strlen(path));
+	strcpy(fullPath, s);
+	strcat(fullPath, " ");
+	strcat(fullPath, path);
+	strcat(fullPath, ".c");
+	result = execv(fullPath, argv);
+	//printf("shell path %s\n", s);
+	printf("full shell command: %s\n\n", fullPath);
+	printf("result: %d\n", result);
+	if (result != -1) return 1;
+	s = p + 1;
+      } while (p != NULL || result == 0);
+      }*/
+    //printf("%s\n", path);
+    // return execv(path, argv);
     
   } else { 
     wait(NULL);                /* Wait for child */
