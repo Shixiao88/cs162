@@ -106,37 +106,31 @@ int cmd_exec(struct tokens *tokens) {
       argv[i] = tokens_get_token(tokens, i);
     }
     argv[len] = NULL;
-    if (execv(argv[0], argv) == -1) {
-      perror("execv");
-    }
-    return res;
-      /*} else {
-      printf("reach 2\n");
+    
+    if (strchr(argv[0], '/') != NULL) {
+      int res = execv(argv[0], argv);
+      if (res == -1) perror("Error: ");
+      return res;
+    } else {
       char *dup = strdup(getenv("PATH"));
       char *s = dup;
       char *p = NULL;
       int result;
-      printf("reach 2\n");
       do {
 	p = strchr(s, ':');
 	if (p != NULL) {
 	  p[0] = 0;
 	}
-	char * fullPath = (char *) malloc(5 + strlen(s) + strlen(path));
+	char * fullPath = (char *) malloc(5 + strlen(s) + strlen(argv[0]));
 	strcpy(fullPath, s);
-	strcat(fullPath, " ");
-	strcat(fullPath, path);
-	strcat(fullPath, ".c");
+	strcat(fullPath, "/");
+	strcat(fullPath, argv[0]);
 	result = execv(fullPath, argv);
-	//printf("shell path %s\n", s);
-	printf("full shell command: %s\n\n", fullPath);
-	printf("result: %d\n", result);
 	if (result != -1) return 1;
 	s = p + 1;
       } while (p != NULL || result == 0);
-      }*/
-    //printf("%s\n", path);
-    // return execv(path, argv);
+    }
+    exit(0);
     
   } else { 
     wait(NULL);                /* Wait for child */
