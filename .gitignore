@@ -33,6 +33,8 @@
 *.swp
 *~
 TAGS
+.vscode
+.idea
 
 # HW0
 hw0/limits
@@ -52,6 +54,18 @@ hw1/fwords
 
 # HW2
 hw2/shell
+
+# HW3
+hw3/.ipynb_checkpoints
+
+# HW4
+hw4/mm_test
+
+# HW5
+hw5/httpserver
+hw5/forkserver
+hw5/threadserver
+hw5/poolserver
 
 # HW5
 hw5/**/build
