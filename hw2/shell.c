@@ -32,6 +32,8 @@ int cmd_exit(struct tokens *tokens);
 int cmd_help(struct tokens *tokens);
 int cmd_pwd(struct tokens *tokens);
 int cmd_cd(struct tokens *tokens);
+int cmd_stdIn(struct tokens *tokens);
+int cmd_stdOut(struct tokens *tokens);
 int cmd_exec(struct tokens *tokens);
 
 /* Built-in command functions take token array (see parse.h) and return int */
@@ -49,6 +51,8 @@ fun_desc_t cmd_table[] = {
   {cmd_exit, "exit", "exit the command shell"},
   {cmd_pwd, "pwd", "display the current directory"},
   {cmd_cd, "cd", "change the directory"},
+  {cmd_stdIn, ">", "redirect input"},
+  {cmd_stdOut, "<", "redirect output"},
 };
 
 /* Prints a helpful description for the given command */
@@ -92,6 +96,86 @@ int cmd_cd(unused struct tokens *tokens) {
   return error;
 }
 
+/* Redirect input ">" */
+int cmd_stdIn(unused struct tokens *tokens) {
+  if (tokens_get_length(tokens) < 3) {
+    printf("invalid arguments number for pwd, require 3 or more\n");
+    return 0;
+  }
+
+  int token_length = tokens_get_length(tokens);
+  char *slice = (char *) malloc(token_length * 2 + 1);
+  for (int i = 0; i < token_length; i++) {
+    char *v = tokens_get_token(tokens, i);
+    if (strcmp(v, ">") == 0) {
+      break;
+    } else {
+      strcat(slice, " ");
+      strcat(slice, v);
+    }
+  }
+
+  int stdout_copy = dup(1);
+  close(1);
+  int output_file = open(tokens_get_token(tokens, token_length - 1),
+			 (O_WRONLY | O_CREAT | O_APPEND));
+  pid_t cpid = fork();
+  if (cpid == -1) {
+    perror("fork");
+  }
+  
+  if (cpid == 0) {
+    cmd_exec(tokenize(slice));
+    exit(0);
+  } else {
+    wait(NULL);
+    close(output_file);
+    dup2(stdout_copy, 1);
+    close(stdout_copy);
+    return 1;
+  }
+}
+
+/* Redirect output "<" */
+int cmd_stdOut(unused struct tokens *tokens) {
+  if (tokens_get_length(tokens) < 3) {
+    printf("invalid arguments number for redirection, require more than 3\n");
+    return 0;
+  }
+  
+  int token_length = tokens_get_length(tokens);
+  char *slice = (char *) malloc(token_length * 2 + 1);
+  for (int i = 0; i < token_length; i++) {
+    char *v = tokens_get_token(tokens, i);
+    if (strcmp(v, "<") == 0) {
+      break;
+    } else {
+      strcat(slice, " ");
+      strcat(slice, v);
+    }
+  }
+
+  int stdin_copy = dup(0);
+  close(0);
+  int outin_file = open(tokens_get_token(tokens, token_length - 1),
+			(O_RDONLY));
+  pid_t cpid = fork();
+  if (cpid == -1) {
+    perror("fork");
+  }
+  
+  if (cpid == 0) {
+    cmd_exec(tokenize(slice));
+    exit(0);
+  } else {
+    wait(NULL);
+    close(outin_file);
+    dup2(stdin_copy, 0);
+    close(stdin_copy);
+    return 1;
+  }
+}
+  
 /* Execute program */
 int cmd_exec(struct tokens *tokens) {
   pid_t cpid = fork();
@@ -185,9 +269,20 @@ int main(unused int argc, unused char *argv[]) {
   while (fgets(line, 4096, stdin)) {
     /* Split our line into words. */
     struct tokens *tokens = tokenize(line);
+    int lookUpIndex = 0;
+
+    int token_length = tokens_get_length(tokens);
+    if (token_length >= 3) {
+      for (int i = 0; i < token_length; i++) {
+	char *v = tokens_get_token(tokens, i);
+	if (strcmp(v, ">") == 0 || strcmp(v, "<") == 0) {
+	  lookUpIndex = i;
+	}
+      }
+    }
 
     /* Find which built-in function to run. */
-    int fundex = lookup(tokens_get_token(tokens, 0));
+    int fundex = lookup(tokens_get_token(tokens, lookUpIndex));
 
     if (fundex >= 0) {
       cmd_table[fundex].fun(tokens);
