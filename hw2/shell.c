@@ -125,9 +125,11 @@ int cmd_stdIn(unused struct tokens *tokens) {
   }
   
   if (cpid == 0) {
+    setpgrp();
     cmd_exec(tokenize(slice));
     exit(0);
   } else {
+    setpgid(cpid, cpid);
     wait(NULL);
     close(output_file);
     dup2(stdout_copy, 1);
@@ -165,9 +167,11 @@ int cmd_stdOut(unused struct tokens *tokens) {
   }
   
   if (cpid == 0) {
+    setpgrp();
     cmd_exec(tokenize(slice));
     exit(0);
   } else {
+    setpgid(cpid, cpid);
     wait(NULL);
     close(outin_file);
     dup2(stdin_copy, 0);
@@ -175,15 +179,34 @@ int cmd_stdOut(unused struct tokens *tokens) {
     return 1;
   }
 }
-  
+
+void put_process_in_foreground (pid_t pid, pid_t pgid) {
+  /* Put the job into the foreground.  */
+  if (tcsetpgrp (shell_terminal, pgid) == -1) {
+    perror("failt to set foreground in child process");
+  }
+
+  signal (SIGINT, SIG_DFL);
+  signal (SIGQUIT, SIG_DFL);
+  signal (SIGTSTP, SIG_DFL);
+  signal (SIGTTIN, SIG_DFL);
+  signal (SIGTTOU, SIG_DFL);
+  signal (SIGCHLD, SIG_DFL);
+}
+
 /* Execute program */
 int cmd_exec(struct tokens *tokens) {
+    
   pid_t cpid = fork();
   if (cpid == -1) {
     perror("fork");
   }
   
   if (cpid == 0) {
+    setpgrp();
+    pid_t my_pid = getpid();
+    put_process_in_foreground(my_pid, my_pid);
+    
     size_t len = tokens_get_length(tokens);
     char *argv[len] ;
     for (int i = 0; i < len; i++) {
@@ -194,7 +217,8 @@ int cmd_exec(struct tokens *tokens) {
     if (strchr(argv[0], '/') != NULL) {
       int res = execv(argv[0], argv);
       if (res == -1) perror("Error: ");
-      return res;
+      exit(0);
+      //return res;
     } else {
       char *dup = strdup(getenv("PATH"));
       char *s = dup;
@@ -210,16 +234,38 @@ int cmd_exec(struct tokens *tokens) {
 	strcat(fullPath, "/");
 	strcat(fullPath, argv[0]);
 	result = execv(fullPath, argv);
-	if (result != -1) return 1;
+	if (result != -1) {
+	  exit(0);
+	}
 	s = p + 1;
       } while (p != NULL || result == 0);
+      
     }
+
+    /* Put the shell back in the foreground.  */
+
+    if (tcsetpgrp (shell_terminal, shell_pgid) == -1) {
+      perror("tcsetpgrp failed in child!");
+      
+    }
+
+    /* Restore the shell¡¯s terminal modes.  */
+    tcsetattr (shell_terminal, TCSADRAIN, &shell_tmodes);
+
     exit(0);
+  } else {
+    setpgid(cpid, cpid);
+
+    if (tcsetpgrp(shell_terminal, cpid) == -1) {
+      printf("tcsetpgrp failed in parent! error: %d\n", errno);
+      tcsetpgrp (shell_terminal, shell_pgid);
+      tcsetattr (shell_terminal, TCSADRAIN, &shell_tmodes);
+      exit(1);
+    }
     
-  } else { 
-    wait(NULL);                /* Wait for child */
-    return 1;
+    wait(&cpid);                /* Wait for child */
   }
+  return 0;
 }
 
 /* Looks up the built-in command, if it exists. */
@@ -228,6 +274,20 @@ int lookup(char cmd[]) {
     if (cmd && (strcmp(cmd_table[i].cmd, cmd) == 0))
       return i;
   return -1;
+}
+
+void termination_handler (int signum) {
+  if (signum == SIGCONT) {
+    printf("come to signal countinue for the shell\n");
+  }
+  if (signum == SIGTTIN) {
+    pid_t currpgrp = getpgrp();
+    
+    printf("come to signal int for the shell\ncurrent group: %d\nshell group id: %d\n",
+	   currpgrp, shell_pgid);
+
+    wait(NULL);
+  }
 }
 
 /* Intialization procedures for this shell */
@@ -245,8 +305,19 @@ void init_shell() {
     while (tcgetpgrp(shell_terminal) != (shell_pgid = getpgrp()))
       kill(-shell_pgid, SIGTTIN);
 
+    signal (SIGINT, SIG_IGN);
+    signal (SIGQUIT, SIG_IGN);
+    signal (SIGTSTP, SIG_IGN);
+    signal (SIGTTIN, SIG_IGN);
+    signal (SIGTTOU, SIG_IGN);
+    signal (SIGCHLD, SIG_IGN);
+    
     /* Saves the shell's process id */
     shell_pgid = getpid();
+    if (setpgid (shell_pgid, shell_pgid) < 0) {
+      perror ("Couldn't put the shell in its own process group");
+      exit (1);
+    }
 
     /* Take control of the terminal */
     tcsetpgrp(shell_terminal, shell_pgid);
@@ -256,12 +327,13 @@ void init_shell() {
   }
 }
 
+
 int main(unused int argc, unused char *argv[]) {
   init_shell();
-
+  
+  
   static char line[4096];
   int line_num = 0;
-
   /* Please only print shell prompts when standard input is not a tty */
   if (shell_is_interactive)
     fprintf(stdout, "%d: ", line_num);
@@ -292,13 +364,19 @@ int main(unused int argc, unused char *argv[]) {
       //fprintf(stdout, "This shell doesn't know how to run programs.\n");
     }
 
-    if (shell_is_interactive)
+    if (shell_is_interactive) {
       /* Please only print shell prompts when standard input is not a tty */
       fprintf(stdout, "%d: ", ++line_num);
+
+      /* Take control of the terminal */
+      tcsetpgrp(shell_terminal, shell_pgid);
+      
+      /* Save the current termios to a variable, so it can be restored later. */
+      tcgetattr(shell_terminal, &shell_tmodes);
+    }
 
     /* Clean up memory */
     tokens_destroy(tokens);
   }
-
   return 0;
 }
